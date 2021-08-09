@@ -3089,29 +3089,29 @@ zoom(const Arg *arg)
 int
 main(int argc, char *argv[])
 {
-	if (argc == 2 && !strcmp("-v", argv[1]))
-		die("dwm-"VERSION);
-	else if (argc != 1)
-		die("usage: dwm [-v]");
-	if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
-		fputs("warning: no locale support\n", stderr);
-	if (!(dpy = XOpenDisplay(NULL)))
-		die("dwm: cannot open display");
-	if (!(xcon = XGetXCBConnection(dpy)))
-		die("dwm: cannot get xcb connection\n");
-	checkotherwm();
-	setup();
+    if (argc == 2 && !strcmp("-v", argv[1]))
+    	die("dwm-"VERSION);
+    else if (argc != 1)
+    	die("usage: dwm [-v]");
+    if (!setlocale(LC_CTYPE, "") || !XSupportsLocale())
+    	fputs("warning: no locale support\n", stderr);
+    if (!(dpy = XOpenDisplay(NULL)))
+    	die("dwm: cannot open display");
+    if (!(xcon = XGetXCBConnection(dpy)))
+    	die("dwm: cannot get xcb connection\n");
+    checkotherwm();
+    setup();
 #ifdef __OpenBSD__
-	if (pledge("stdio rpath proc exec ps", NULL) == -1)
-		die("pledge");
+    if (pledge("stdio rpath proc exec ps", NULL) == -1)
+        die("pledge");
 #endif /* __OpenBSD__ */
-	scan();
-        system("ibus restart");
-    system("killall jack-detect; jack-detect &");
-        system("killall polybar; polybar -r main &");
-	run();
-	if(restart) execvp(argv[0], argv);
-	cleanup();
-	XCloseDisplay(dpy);
-	return EXIT_SUCCESS;
+    scan();
+    system("ibus restart");
+    system("killall volume; volume --headphone &");
+    system("killall polybar; polybar -r main &");
+    run();
+    if(restart) execvp(argv[0], argv);
+    cleanup();
+    XCloseDisplay(dpy);
+    return EXIT_SUCCESS;
 }
