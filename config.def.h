@@ -47,6 +47,7 @@ static const Rule rules[] = {
     { NULL,                 "brave-browser",        NULL,           1 << 1,     0,          0,          0,          -1 },
     { NULL,                 "microsoft-edge-dev",   NULL,           1 << 1,     0,          0,          0,          -1 },
     { "Firefox",            NULL,                   NULL,           1 << 1,     0,          0,          0,          -1 },
+    { "Opera",              NULL,                   NULL,           1 << 1,     0,          0,          0,          -1 },
     { "st-256color",        NULL,                   NULL,           0,          0,          1,          0,          -1 },
     { NULL,                 NULL,                   "Event Tester", 0,          0,          0,          1,          -1 }, /* xev */
 };
