@@ -3108,7 +3108,7 @@ main(int argc, char *argv[])
     scan();
     system("ibus restart");
     system("killall volume; volume --headphone &");
-    system("killall polybar; polybar -r main &");
+    system("~/.config/polybar/launch.sh");
     run();
     if(restart) execvp(argv[0], argv);
     cleanup();
