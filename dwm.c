@@ -3107,7 +3107,6 @@ main(int argc, char *argv[])
 #endif /* __OpenBSD__ */
     scan();
     system("ibus restart");
-    system("killall volume; volume --headphone &");
     system("~/.config/polybar/launch.sh");
     run();
     if(restart) execvp(argv[0], argv);
