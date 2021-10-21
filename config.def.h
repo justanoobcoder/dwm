@@ -85,7 +85,7 @@ static const char *dmenucmd[] = { "dmenu_run", NULL };
 #include "movestack.c"
 static Key keys[] = {
     /* modifier                     key         function        argument */
-    { MODKEY,                       XK_d,       spawn,          {.v = dmenucmd } },
+    { MODKEY,                       XK_d,       spawn,          SHCMD("~/.config/rofi/launcher/launcher.sh") },
     { MODKEY,                       XK_Return,  spawn,          SHCMD("$TERMINAL") },
     { MODKEY,                       XK_w,       spawn,          SHCMD("$BROWSER") },
     { MODKEY,                       XK_b,       togglebar,      {0} },
