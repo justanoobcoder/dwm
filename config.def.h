@@ -153,6 +153,7 @@ static Key keys[] = {
     TAGKEYS(                        XK_8,                       7)
     TAGKEYS(                        XK_9,                       8)
     { MODKEY|ShiftMask,             XK_q,       spawn,          SHCMD("dsysact") },
+    { WINKEY|ShiftMask,             XK_s,       spawn,          SHCMD("maim -s | xclip -selection clipboard -t image/png") },
     { MODKEY|ShiftMask,             XK_r,       quit,           {1} }, 
     { MODKEY,                       XK_Print,   spawn,          SHCMD("drecord") },
     { MODKEY,                       XK_Delete,  spawn,          SHCMD("drecord --kill") },
