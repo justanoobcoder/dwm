@@ -88,6 +88,8 @@ static Key keys[] = {
     { MODKEY,                       XK_d,       spawn,          SHCMD("~/.config/rofi/launcher/launcher.sh") },
     { MODKEY,                       XK_Return,  spawn,          SHCMD("$TERMINAL") },
     { MODKEY,                       XK_w,       spawn,          SHCMD("$BROWSER") },
+    { MODKEY,                       XK_c,       spawn,          SHCMD("rofi -modi \"clipboard:greenclip print\" -show clipboard -run-command '{cmd}'") },
+    { MODKEY|ShiftMask,             XK_c,       spawn,          SHCMD("pkill greenclip && greenclip clear && greenclip daemon &") },
     { MODKEY,                       XK_b,       togglebar,      {0} },
     { MODKEY,                       XK_j,       focusstack,     {.i = +1 } },
     { MODKEY,                       XK_k,       focusstack,     {.i = -1 } },
