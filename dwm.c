@@ -3109,7 +3109,7 @@ main(int argc, char *argv[])
 #endif /* __OpenBSD__ */
     scan();
     system("ibus restart");
-    system("~/.config/polybar/launch.sh");
+    system("dwm-msg subscribe tag_change_event > /tmp/dwm.log &");
     run();
     if(restart) execvp(argv[0], argv);
     cleanup();
