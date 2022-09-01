@@ -3110,6 +3110,8 @@ main(int argc, char *argv[])
     scan();
     system("ibus restart");
     system("dwm-msg subscribe tag_change_event > /tmp/dwm.log &");
+    system("eww daemon");
+    system("eww open bar");
     run();
     if(restart) execvp(argv[0], argv);
     cleanup();
