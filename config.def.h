@@ -154,7 +154,7 @@ static Key keys[] = {
     TAGKEYS(                        XK_7,                       6)
     TAGKEYS(                        XK_8,                       7)
     TAGKEYS(                        XK_9,                       8)
-    { MODKEY|ShiftMask,             XK_q,       spawn,          SHCMD("dsysact") },
+    { MODKEY|ShiftMask,             XK_q,       spawn,          SHCMD("powermenu") },
     { WINKEY|ShiftMask,             XK_s,       spawn,          SHCMD("maim -s | xclip -selection clipboard -t image/png") },
     { MODKEY|ShiftMask,             XK_r,       quit,           {1} }, 
     { MODKEY,                       XK_Print,   spawn,          SHCMD("drecord") },
@@ -164,11 +164,11 @@ static Key keys[] = {
     { MODKEY,                       XK_F1,      spawn,          SHCMD("mpv --no-cache --no-osc --no-input-default-bindings --input-conf=/dev/null --title=webcam $(ls /dev/video[0,2,4,6,8] | tail -n 1)") },
     { MODKEY,                       XK_F2,      spawn,          SHCMD("killall -q screenkey ; screenkey -p fixed -g $(slop -n -f '%g') -M &") },
     { MODKEY,                       XK_F3,      spawn,          SHCMD("killall -q screenkey") },
-    { 0, XF86XK_AudioMute,                      spawn,          SHCMD("changeVolume toggle; polybar-msg hook volume 1") },
-    { 0, XF86XK_AudioRaiseVolume,               spawn,          SHCMD("changeVolume 5%+; polybar-msg hook volume 1") },
-    { 0, XF86XK_AudioLowerVolume,               spawn,          SHCMD("changeVolume 5%-; polybar-msg hook volume 1") },
-    { 0, XF86XK_MonBrightnessUp,                spawn,          SHCMD("xbacklight -inc 10%") },
-    { 0, XF86XK_MonBrightnessDown,              spawn,          SHCMD("xbacklight -dec 10%") },
+    { 0, XF86XK_AudioMute,                      spawn,          SHCMD("changeVolume toggle") },
+    { 0, XF86XK_AudioRaiseVolume,               spawn,          SHCMD("changeVolume 5%+") },
+    { 0, XF86XK_AudioLowerVolume,               spawn,          SHCMD("changeVolume 5%-") },
+    { 0, XF86XK_MonBrightnessUp,                spawn,          SHCMD("brightnessctl set 10%+") },
+    { 0, XF86XK_MonBrightnessDown,              spawn,          SHCMD("brightnessctl set 10%-") },
 };
 
 /* button definitions */
