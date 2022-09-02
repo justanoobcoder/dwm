@@ -1,5 +1,5 @@
 /* See LICENSE file for copyright and license details. */
-
+#include <stddef.h>
 #define SESSION_FILE "/tmp/dwm-session"
 
 /* appearance */
