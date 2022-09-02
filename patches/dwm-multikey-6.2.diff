@@ -1,0 +1,327 @@
+From b845451cde90c3b46f7863c27a184555b444e9af Mon Sep 17 00:00:00 2001
+From: Miles Alan <m@milesalan.com>
+Date: Sat, 18 Apr 2020 19:25:29 -0500
+Subject: [PATCH] Multikey: Run different actions for single keybinding based
+ on # of keypresses
+
+Changed keypress code to allow keybindings to be selectively dispatched when
+tapped a specific # of times as specified by the new npresses field on the
+Key struct.
+
+In the example added to the config.def.h, the tiling layout is set when
+Mod+w is tapped once, float layout is set when Mod+w is tapped twice,
+and monocole layout is set when Mod+w is tapped three times (or held down).
+---
+ config.def.h |  84 ++++++++++++++++++++++------------------
+ config.mk    |   2 +-
+ dwm.c        | 107 +++++++++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 150 insertions(+), 43 deletions(-)
+
+diff --git a/config.def.h b/config.def.h
+index 1c0b587..dc945b4 100644
+--- a/config.def.h
++++ b/config.def.h
+@@ -46,10 +46,10 @@ static const Layout layouts[] = {
+ /* key definitions */
+ #define MODKEY Mod1Mask
+ #define TAGKEYS(KEY,TAG) \
+-	{ MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
+-	{ MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
+-	{ MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
+-	{ MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
++	{ 0, MODKEY,                       KEY,      view,           {.ui = 1 << TAG} }, \
++	{ 0, MODKEY|ControlMask,           KEY,      toggleview,     {.ui = 1 << TAG} }, \
++	{ 0, MODKEY|ShiftMask,             KEY,      tag,            {.ui = 1 << TAG} }, \
++	{ 0, MODKEY|ControlMask|ShiftMask, KEY,      toggletag,      {.ui = 1 << TAG} },
+ 
+ /* helper for spawning shell commands in the pre dwm-5.0 fashion */
+ #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
+@@ -59,41 +59,49 @@ static char dmenumon[2] = "0"; /* component of dmenucmd, manipulated in spawn()
+ static const char *dmenucmd[] = { "dmenu_run", "-m", dmenumon, "-fn", dmenufont, "-nb", col_gray1, "-nf", col_gray3, "-sb", col_cyan, "-sf", col_gray4, NULL };
+ static const char *termcmd[]  = { "st", NULL };
+ 
++#define MULTIKEY_THRESHOLD_MS_PRESS 200
++#define MULTIKEY_THRESHOLD_MS_HOLD 700
++
+ static Key keys[] = {
+-	/* modifier                     key        function        argument */
+-	{ MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
+-	{ MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
+-	{ MODKEY,                       XK_b,      togglebar,      {0} },
+-	{ MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
+-	{ MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
+-	{ MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
+-	{ MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
+-	{ MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
+-	{ MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
+-	{ MODKEY,                       XK_Return, zoom,           {0} },
+-	{ MODKEY,                       XK_Tab,    view,           {0} },
+-	{ MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
+-	{ MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
+-	{ MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
+-	{ MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
+-	{ MODKEY,                       XK_space,  setlayout,      {0} },
+-	{ MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
+-	{ MODKEY,                       XK_0,      view,           {.ui = ~0 } },
+-	{ MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
+-	{ MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
+-	{ MODKEY,                       XK_period, focusmon,       {.i = +1 } },
+-	{ MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
+-	{ MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
+-	TAGKEYS(                        XK_1,                      0)
+-	TAGKEYS(                        XK_2,                      1)
+-	TAGKEYS(                        XK_3,                      2)
+-	TAGKEYS(                        XK_4,                      3)
+-	TAGKEYS(                        XK_5,                      4)
+-	TAGKEYS(                        XK_6,                      5)
+-	TAGKEYS(                        XK_7,                      6)
+-	TAGKEYS(                        XK_8,                      7)
+-	TAGKEYS(                        XK_9,                      8)
+-	{ MODKEY|ShiftMask,             XK_q,      quit,           {0} },
++	/* npresses,   modifier                     key        function        argument */
++	{ 0,           MODKEY,                       XK_p,      spawn,          {.v = dmenucmd } },
++	{ 0,           MODKEY|ShiftMask,             XK_Return, spawn,          {.v = termcmd } },
++	{ 0,           MODKEY,                       XK_b,      togglebar,      {0} },
++	{ 0,           MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
++	{ 0,           MODKEY,                       XK_k,      focusstack,     {.i = -1 } },
++	{ 0,           MODKEY,                       XK_i,      incnmaster,     {.i = +1 } },
++	{ 0,           MODKEY,                       XK_d,      incnmaster,     {.i = -1 } },
++	{ 0,           MODKEY,                       XK_h,      setmfact,       {.f = -0.05} },
++	{ 0,           MODKEY,                       XK_l,      setmfact,       {.f = +0.05} },
++	{ 0,           MODKEY,                       XK_Return, zoom,           {0} },
++	{ 0,           MODKEY,                       XK_Tab,    view,           {0} },
++	{ 0,           MODKEY|ShiftMask,             XK_c,      killclient,     {0} },
++	{ 0,           MODKEY,                       XK_t,      setlayout,      {.v = &layouts[0]} },
++	{ 0,           MODKEY,                       XK_f,      setlayout,      {.v = &layouts[1]} },
++	{ 0,           MODKEY,                       XK_m,      setlayout,      {.v = &layouts[2]} },
++	{ 0,           MODKEY,                       XK_space,  setlayout,      {0} },
++	{ 0,           MODKEY|ShiftMask,             XK_space,  togglefloating, {0} },
++	{ 0,           MODKEY,                       XK_0,      view,           {.ui = ~0 } },
++	{ 0,           MODKEY|ShiftMask,             XK_0,      tag,            {.ui = ~0 } },
++	{ 0,           MODKEY,                       XK_comma,  focusmon,       {.i = -1 } },
++	{ 0,           MODKEY,                       XK_period, focusmon,       {.i = +1 } },
++	{ 0,           MODKEY|ShiftMask,             XK_comma,  tagmon,         {.i = -1 } },
++	{ 0,           MODKEY|ShiftMask,             XK_period, tagmon,         {.i = +1 } },
++
++	{ 1,           MODKEY,                       XK_w,      setlayout,      {.v = &layouts[0]} },
++	{ 2,           MODKEY,                       XK_w,      setlayout,      {.v = &layouts[1]} },
++	{ 3,           MODKEY,                       XK_w,      setlayout,      {.v = &layouts[2]} },
++
++	TAGKEYS(                                     XK_1,                      0)
++	TAGKEYS(                                     XK_2,                      1)
++	TAGKEYS(                                     XK_3,                      2)
++	TAGKEYS(                                     XK_4,                      3)
++	TAGKEYS(                                     XK_5,                      4)
++	TAGKEYS(                                     XK_6,                      5)
++	TAGKEYS(                                     XK_7,                      6)
++	TAGKEYS(                                     XK_8,                      7)
++	TAGKEYS(                                     XK_9,                      8)
++	{ 0,           MODKEY|ShiftMask,             XK_q,      quit,           {0} },
+ };
+ 
+ /* button definitions */
+diff --git a/config.mk b/config.mk
+index 6d36cb7..fe0a2ec 100644
+--- a/config.mk
++++ b/config.mk
+@@ -22,7 +22,7 @@ FREETYPEINC = /usr/include/freetype2
+ 
+ # includes and libs
+ INCS = -I${X11INC} -I${FREETYPEINC}
+-LIBS = -L${X11LIB} -lX11 ${XINERAMALIBS} ${FREETYPELIBS}
++LIBS = -L${X11LIB} -lrt -lX11 ${XINERAMALIBS} ${FREETYPELIBS}
+ 
+ # flags
+ CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_POSIX_C_SOURCE=2 -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
+diff --git a/dwm.c b/dwm.c
+index 4465af1..975956c 100644
+--- a/dwm.c
++++ b/dwm.c
+@@ -27,6 +27,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
++#include <time.h>
+ #include <unistd.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
+@@ -40,6 +41,7 @@
+ #include <X11/extensions/Xinerama.h>
+ #endif /* XINERAMA */
+ #include <X11/Xft/Xft.h>
++#include <X11/XKBlib.h>
+ 
+ #include "drw.h"
+ #include "util.h"
+@@ -100,6 +102,7 @@ struct Client {
+ };
+ 
+ typedef struct {
++	unsigned int npresses;
+ 	unsigned int mod;
+ 	KeySym keysym;
+ 	void (*func)(const Arg *);
+@@ -176,6 +179,10 @@ static void grabbuttons(Client *c, int focused);
+ static void grabkeys(void);
+ static void incnmaster(const Arg *arg);
+ static void keypress(XEvent *e);
++static void keypresstimerdispatch(int msduration, int data);
++static void keypresstimerdone(union sigval timer_data);
++static void keypresstimerdonesync(int idx);
++static void keyrelease(XEvent *e);
+ static void killclient(const Arg *arg);
+ static void manage(Window w, XWindowAttributes *wa);
+ static void mappingnotify(XEvent *e);
+@@ -253,13 +260,14 @@ static void (*handler[LASTEvent]) (XEvent *) = {
+ 	[Expose] = expose,
+ 	[FocusIn] = focusin,
+ 	[KeyPress] = keypress,
++	[KeyRelease] = keyrelease,
+ 	[MappingNotify] = mappingnotify,
+ 	[MapRequest] = maprequest,
+ 	[MotionNotify] = motionnotify,
+ 	[PropertyNotify] = propertynotify,
+ 	[UnmapNotify] = unmapnotify
+ };
+-static Atom wmatom[WMLast], netatom[NetLast];
++static Atom timeratom, wmatom[WMLast], netatom[NetLast];
+ static int running = 1;
+ static Cur *cursor[CurLast];
+ static Clr **scheme;
+@@ -268,6 +276,10 @@ static Drw *drw;
+ static Monitor *mons, *selmon;
+ static Window root, wmcheckwin;
+ 
++static int multikeypendingindex = -1;
++static timer_t multikeypendingtimer = NULL;
++static int multikeyup = 1;
++
+ /* configuration, allows nested code to access above variables */
+ #include "config.h"
+ 
+@@ -515,6 +527,10 @@ clientmessage(XEvent *e)
+ 	XClientMessageEvent *cme = &e->xclient;
+ 	Client *c = wintoclient(cme->window);
+ 
++	if (cme->message_type == timeratom) {
++		keypresstimerdonesync(cme->data.s[0]);
++		return;
++	}
+ 	if (!c)
+ 		return;
+ 	if (cme->message_type == netatom[NetWMState]) {
+@@ -991,11 +1007,92 @@ keypress(XEvent *e)
+ 
+ 	ev = &e->xkey;
+ 	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
+-	for (i = 0; i < LENGTH(keys); i++)
++	for (i = 0; i < LENGTH(keys); i++) {
+ 		if (keysym == keys[i].keysym
+ 		&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
+-		&& keys[i].func)
+-			keys[i].func(&(keys[i].arg));
++		&& keys[i].func) {
++			// E.g. Normal functionality case - npresses 0 == keydown immediate fn
++			if (keys[i].npresses == 0) {
++			  keys[i].func(&(keys[i].arg));
++			  break;
++		  }
++
++			// Multikey functionality - find index of key, set global, & dispatch
++			if (
++			  (multikeypendingindex == -1 && multikeyup && keys[i].npresses == 1) ||
++			  (multikeypendingindex != -1 && keys[multikeypendingindex].npresses + 1 == keys[i].npresses)
++			) {
++				multikeyup = 0;
++				multikeypendingindex = i;
++				keypresstimerdispatch(MULTIKEY_THRESHOLD_MS_PRESS, i);
++				break;
++			}
++		}
++	}
++}
++
++void
++keypresstimerdispatch(int msduration, int data)
++{
++	struct sigevent timer_signal_event;
++	struct itimerspec timer_period;
++	static int multikeypendingtimer_created = 0;
++	// Clear out the old timer if any set,and dispatch new timer
++	if (multikeypendingtimer_created) {
++		timer_delete(multikeypendingtimer);
++	}
++	timer_signal_event.sigev_notify = SIGEV_THREAD;
++	timer_signal_event.sigev_notify_function = keypresstimerdone;
++	timer_signal_event.sigev_value.sival_int = data;
++	timer_signal_event.sigev_notify_attributes = NULL;
++	timer_create(CLOCK_MONOTONIC, &timer_signal_event, &multikeypendingtimer);
++	multikeypendingtimer_created = 1;
++	timer_period.it_value.tv_sec = 0;
++	timer_period.it_value.tv_nsec = msduration * 1000000;
++	timer_period.it_interval.tv_sec = 0;
++	timer_period.it_interval.tv_nsec =  0;
++	timer_settime(multikeypendingtimer, 0, &timer_period, NULL);
++}
++
++void
++keypresstimerdone(union sigval timer_data)
++{
++	XEvent ev;
++	memset(&ev, 0, sizeof ev);
++	ev.xclient.type = ClientMessage;
++	ev.xclient.window = root;
++	ev.xclient.message_type = timeratom;
++	ev.xclient.format = 16;
++	ev.xclient.data.s[0] = ((short) timer_data.sival_int);
++	XSendEvent(dpy, root, False, SubstructureRedirectMask, &ev);
++	XSync(dpy, False);
++}
++
++void
++keypresstimerdonesync(int idx)
++{
++	int i, maxidx;
++	if (keys[idx].npresses == 1 && !multikeyup) {
++		// Dispatch hold key
++		maxidx = -1;
++		for (i = 0; i < LENGTH(keys); i++)
++			if (keys[i].keysym == keys[idx].keysym) maxidx = i;
++		if (maxidx != -1)
++			keypresstimerdispatch(
++				MULTIKEY_THRESHOLD_MS_HOLD - MULTIKEY_THRESHOLD_MS_PRESS,
++				maxidx
++			);
++	} else if (keys[idx].func) {
++		// Run the actual keys' fn
++		keys[idx].func(&(keys[idx].arg));
++		multikeypendingindex = -1;
++	}
++}
++
++void
++keyrelease(XEvent *e)
++{
++	multikeyup = 1;
+ }
+ 
+ void
+@@ -2127,6 +2224,7 @@ zoom(const Arg *arg)
+ int
+ main(int argc, char *argv[])
+ {
++	XInitThreads();
+ 	if (argc == 2 && !strcmp("-v", argv[1]))
+ 		die("dwm-"VERSION);
+ 	else if (argc != 1)
+@@ -2135,6 +2233,7 @@ main(int argc, char *argv[])
+ 		fputs("warning: no locale support\n", stderr);
+ 	if (!(dpy = XOpenDisplay(NULL)))
+ 		die("dwm: cannot open display");
++	XkbSetDetectableAutoRepeat(dpy, True, NULL);
+ 	checkotherwm();
+ 	setup();
+ #ifdef __OpenBSD__
+-- 
+2.30.1
+
