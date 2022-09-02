@@ -3109,7 +3109,7 @@ main(int argc, char *argv[])
 #endif /* __OpenBSD__ */
     scan();
     system("ibus restart");
-    system("dwm-msg subscribe tag_change_event > /tmp/dwm.log &");
+    system("dwm-msg subscribe tag_change_event layout_change_event > /tmp/dwm.log &");
     system("eww daemon");
     system("eww open bar");
     run();
