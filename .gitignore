@@ -1,4 +1,5 @@
 dwm
+config.h
 *.orig
 *.rej
 *.o
