@@ -169,6 +169,8 @@ static const Key keys[] = {
 	{ 0,           MODKEY|ShiftMask,             XK_q,      spawn,          SHCMD("powermenu") },
 	{ 0,           MODKEY|ShiftMask,             XK_r,      quit,           {1} },
 
+    { 0,            0,                              XK_Print,   spawn,          SHCMD("dscrot --full") },
+    { 0,            ShiftMask,                      XK_Print,   spawn,          SHCMD("dscrot") },
     { 0,            0, XF86XK_AudioMute,                        spawn,          SHCMD("changeVolume toggle") },
     { 0,            0, XF86XK_AudioRaiseVolume,                 spawn,          SHCMD("changeVolume 5%+") },
     { 0,            0, XF86XK_AudioLowerVolume,                 spawn,          SHCMD("changeVolume 5%-") },
