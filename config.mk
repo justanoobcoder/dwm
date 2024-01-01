@@ -20,6 +20,7 @@ FREETYPEINC = /usr/include/freetype2
 # OpenBSD (uncomment)
 #FREETYPEINC = ${X11INC}/freetype2
 #MANPREFIX = ${PREFIX}/man
+#KVMLIB = -lkvm
 
 # yajl
 YAJLLIBS = -lyajl
@@ -27,7 +28,7 @@ YAJLINC = /usr/include/yajl
 
 # includes and libs
 INCS = -I${X11INC} -I${FREETYPEINC} -I${YAJLINC}
-LIBS = -L${X11LIB} -lrt -lX11 ${XINERAMALIBS} ${FREETYPELIBS} ${YAJLLIBS}
+LIBS = -L${X11LIB} -lrt -lX11 ${XINERAMALIBS} ${FREETYPELIBS} ${YAJLLIBS} -lX11-xcb -lxcb -lxcb-res ${KVMLIB}
 
 # flags
 CPPFLAGS = -D_DEFAULT_SOURCE -D_BSD_SOURCE -D_XOPEN_SOURCE=700L -DVERSION=\"${VERSION}\" ${XINERAMAFLAGS}
