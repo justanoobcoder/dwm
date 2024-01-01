@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -42,6 +43,7 @@
 #include <X11/extensions/Xinerama.h>
 #endif /* XINERAMA */
 #include <X11/Xft/Xft.h>
+#include <X11/XKBlib.h>
 
 #include "drw.h"
 #include "util.h"
@@ -116,6 +118,7 @@ struct Client {
 };
 
 typedef struct {
+	unsigned int npresses;
 	unsigned int mod;
 	KeySym keysym;
 	void (*func)(const Arg *);
@@ -204,6 +207,10 @@ static void grabkeys(void);
 static int handlexevent(struct epoll_event *ev);
 static void incnmaster(const Arg *arg);
 static void keypress(XEvent *e);
+static void keypresstimerdispatch(int msduration, int data);
+static void keypresstimerdone(union sigval timer_data);
+static void keypresstimerdonesync(int idx);
+static void keyrelease(XEvent *e);
 static void killclient(const Arg *arg);
 static void killunsel(const Arg *arg);
 static void manage(Window w, XWindowAttributes *wa);
@@ -295,13 +302,14 @@ static void (*handler[LASTEvent]) (XEvent *) = {
 	[Expose] = expose,
 	[FocusIn] = focusin,
 	[KeyPress] = keypress,
+	[KeyRelease] = keyrelease,
 	[MappingNotify] = mappingnotify,
 	[MapRequest] = maprequest,
 	[MotionNotify] = motionnotify,
 	[PropertyNotify] = propertynotify,
 	[UnmapNotify] = unmapnotify
 };
-static Atom wmatom[WMLast], netatom[NetLast];
+static Atom timeratom, wmatom[WMLast], netatom[NetLast];
 static int epoll_fd;
 static int dpy_fd;
 static int running = 1;
@@ -313,6 +321,10 @@ static Monitor *mons, *selmon, *lastselmon;
 static Window root, wmcheckwin;
 
 #include "ipc.h"
+
+static int multikeypendingindex = -1;
+static timer_t multikeypendingtimer = NULL;
+static int multikeyup = 1;
 
 /* configuration, allows nested code to access above variables */
 #include "config.h"
@@ -645,6 +657,10 @@ clientmessage(XEvent *e)
 	XClientMessageEvent *cme = &e->xclient;
 	Client *c = wintoclient(cme->window);
 
+	if (cme->message_type == timeratom) {
+		keypresstimerdonesync(cme->data.s[0]);
+		return;
+	}
 	if (!c)
 		return;
 	if (cme->message_type == netatom[NetWMState]) {
@@ -1158,11 +1174,92 @@ keypress(XEvent *e)
 
 	ev = &e->xkey;
 	keysym = XKeycodeToKeysym(dpy, (KeyCode)ev->keycode, 0);
-	for (i = 0; i < LENGTH(keys); i++)
+	for (i = 0; i < LENGTH(keys); i++) {
 		if (keysym == keys[i].keysym
 		&& CLEANMASK(keys[i].mod) == CLEANMASK(ev->state)
-		&& keys[i].func)
-			keys[i].func(&(keys[i].arg));
+		&& keys[i].func) {
+			// E.g. Normal functionality case - npresses 0 == keydown immediate fn
+			if (keys[i].npresses == 0) {
+			  keys[i].func(&(keys[i].arg));
+			  break;
+		  }
+
+			// Multikey functionality - find index of key, set global, & dispatch
+			if (
+			  (multikeypendingindex == -1 && multikeyup && keys[i].npresses == 1) ||
+			  (multikeypendingindex != -1 && keys[multikeypendingindex].npresses + 1 == keys[i].npresses)
+			) {
+				multikeyup = 0;
+				multikeypendingindex = i;
+				keypresstimerdispatch(MULTIKEY_THRESHOLD_MS_PRESS, i);
+				break;
+			}
+		}
+	}
+}
+
+void
+keypresstimerdispatch(int msduration, int data)
+{
+	struct sigevent timer_signal_event;
+	struct itimerspec timer_period;
+	static int multikeypendingtimer_created = 0;
+	// Clear out the old timer if any set,and dispatch new timer
+	if (multikeypendingtimer_created) {
+		timer_delete(multikeypendingtimer);
+	}
+	timer_signal_event.sigev_notify = SIGEV_THREAD;
+	timer_signal_event.sigev_notify_function = keypresstimerdone;
+	timer_signal_event.sigev_value.sival_int = data;
+	timer_signal_event.sigev_notify_attributes = NULL;
+	timer_create(CLOCK_MONOTONIC, &timer_signal_event, &multikeypendingtimer);
+	multikeypendingtimer_created = 1;
+	timer_period.it_value.tv_sec = 0;
+	timer_period.it_value.tv_nsec = msduration * 1000000;
+	timer_period.it_interval.tv_sec = 0;
+	timer_period.it_interval.tv_nsec =  0;
+	timer_settime(multikeypendingtimer, 0, &timer_period, NULL);
+}
+
+void
+keypresstimerdone(union sigval timer_data)
+{
+	XEvent ev;
+	memset(&ev, 0, sizeof ev);
+	ev.xclient.type = ClientMessage;
+	ev.xclient.window = root;
+	ev.xclient.message_type = timeratom;
+	ev.xclient.format = 16;
+	ev.xclient.data.s[0] = ((short) timer_data.sival_int);
+	XSendEvent(dpy, root, False, SubstructureRedirectMask, &ev);
+	XSync(dpy, False);
+}
+
+void
+keypresstimerdonesync(int idx)
+{
+	int i, maxidx;
+	if (keys[idx].npresses == 1 && !multikeyup) {
+		// Dispatch hold key
+		maxidx = -1;
+		for (i = 0; i < LENGTH(keys); i++)
+			if (keys[i].keysym == keys[idx].keysym) maxidx = i;
+		if (maxidx != -1)
+			keypresstimerdispatch(
+				MULTIKEY_THRESHOLD_MS_HOLD - MULTIKEY_THRESHOLD_MS_PRESS,
+				maxidx
+			);
+	} else if (keys[idx].func) {
+		// Run the actual keys' fn
+		keys[idx].func(&(keys[idx].arg));
+		multikeypendingindex = -1;
+	}
+}
+
+void
+keyrelease(XEvent *e)
+{
+	multikeyup = 1;
 }
 
 void
@@ -2699,6 +2796,7 @@ zoom(const Arg *arg)
 int
 main(int argc, char *argv[])
 {
+	XInitThreads();
 	if (argc == 2 && !strcmp("-v", argv[1]))
 		die("dwm-"VERSION);
 	else if (argc != 1)
@@ -2707,6 +2805,7 @@ main(int argc, char *argv[])
 		fputs("warning: no locale support\n", stderr);
 	if (!(dpy = XOpenDisplay(NULL)))
 		die("dwm: cannot open display");
+	XkbSetDetectableAutoRepeat(dpy, True, NULL);
 	checkotherwm();
 	setup();
 #ifdef __OpenBSD__
