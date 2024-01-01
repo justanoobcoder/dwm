@@ -102,6 +102,8 @@ static const Key keys[] = {
 	{ 0,           MODKEY,                       XK_p,      spawn,          SHCMD("~/.config/rofi/launcher/launcher.sh") },
 	{ 0,           MODKEY,                       XK_Return, spawn,          SHCMD("$TERMINAL") },
 	{ 0,           MODKEY,                       XK_w,      spawn,          SHCMD("$BROWSER") },
+	{ 0,           MODKEY,                       XK_c,      spawn,          SHCMD("rofi -modi \"clipboard:greenclip print\" -show clipboard -run-command '{cmd}'") },
+	{ 0,           MODKEY|ShiftMask,             XK_c,      spawn,          SHCMD("pkill greenclip && greenclip clear && greenclip daemon &") },
 	{ 0,           MODKEY,                       XK_b,      togglebar,      {0} },
 	{ 0,           MODKEY,                       XK_s,      togglesticky,   {0} },
 	{ 0,           MODKEY,                       XK_j,      focusstack,     {.i = +1 } },
@@ -166,7 +168,7 @@ static const Key keys[] = {
 	TAGKEYS(                                     XK_8,                      7)
 	TAGKEYS(                                     XK_9,                      8)
 	{ 0,           MODKEY|ShiftMask,             XK_s,      spawn,          SHCMD("maim -s | xclip -selection clipboard -t image/png") },
-	{ 0,           MODKEY|ShiftMask,             XK_q,      spawn,          SHCMD("powermenu") },
+	{ 0,           MODKEY|ShiftMask,             XK_q,      spawn,          SHCMD("dsysact") },
 	{ 0,           MODKEY|ShiftMask,             XK_r,      quit,           {1} },
 
     { 0,            0,                              XK_Print,   spawn,          SHCMD("dscrot --full") },
