@@ -44,6 +44,7 @@ static const Rule rules[] = {
     { NULL,                 "microsoft-edge",       NULL,           1 << 1,     0,          0,          0,          -1 },
     { "Firefox",            NULL,                   NULL,           1 << 1,     0,          0,          0,          -1 },
     { "Opera",              NULL,                   NULL,           1 << 1,     0,          0,          0,          -1 },
+    { "floorp",             NULL,                   NULL,           1 << 1,     0,          0,          0,          -1 },
     { "Alacritty",          NULL,                   NULL,           0,          0,          1,          0,          -1 },
 };
 
