@@ -169,6 +169,7 @@ static const Key keys[] = {
 	TAGKEYS(                                     XK_9,                      8)
 	{ 0,           MODKEY|ShiftMask,             XK_s,      spawn,          SHCMD("maim -s | xclip -selection clipboard -t image/png") },
 	{ 0,           MODKEY|ShiftMask,             XK_q,      spawn,          SHCMD("dsysact") },
+	{ 0,           WINKEY,                       XK_x,      spawn,          SHCMD("dsysact") },
 	{ 0,           MODKEY|ShiftMask,             XK_r,      quit,           {1} },
     { 0,           ShiftMask,                    XK_Print,  spawn,          SHCMD("dscrot") },
     { 0,           0,                            XK_Print,  spawn,          SHCMD("dscrot --full") },
