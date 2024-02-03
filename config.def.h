@@ -181,8 +181,8 @@ static const Key keys[] = {
     { 0,           0, XF86XK_AudioMute,                     spawn,          SHCMD("changeVolume toggle") },
     { 0,           0, XF86XK_AudioRaiseVolume,              spawn,          SHCMD("changeVolume inc") },
     { 0,           0, XF86XK_AudioLowerVolume,              spawn,          SHCMD("changeVolume dec") },
-    { 0,           0, XF86XK_MonBrightnessUp,               spawn,          SHCMD("xbacklight -inc 5") },
-    { 0,           0, XF86XK_MonBrightnessDown,             spawn,          SHCMD("xbacklight -dec 5") },
+    { 0,           0, XF86XK_MonBrightnessUp,               spawn,          SHCMD("xbacklight +5") },
+    { 0,           0, XF86XK_MonBrightnessDown,             spawn,          SHCMD("light=$(xbacklight -get) ; [ ${light%.*} -gt 6 ] && xbacklight -5") },
 };
 
 /* button definitions */
