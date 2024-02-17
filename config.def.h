@@ -174,7 +174,7 @@ static const Key keys[] = {
 	{ 0,           MODKEY|ShiftMask,             XK_r,      quit,           {1} },
     { 0,           ShiftMask,                    XK_Print,  spawn,          SHCMD("dscrot") },
     { 0,           0,                            XK_Print,  spawn,          SHCMD("dscrot --full") },
-    { 0,           MODKEY,                       XK_F1,     spawn,          SHCMD("mpv --no-cache --no-osc --no-input-default-bindings --input-conf=/dev/null --title=webcam $(ls /dev/video[0,2,4,6,8] | tail -n 1)") },
+    { 0,           MODKEY,                       XK_F1,     spawn,          SHCMD("mpv av://v4l2:/dev/video0 --profile=low-latency --untimed --vf-toggle=hflip") },
     { 0,           MODKEY,                       XK_F2,     spawn,          SHCMD("killall -q screenkey ; screenkey -p fixed -g $(slop -n -f '%g') -M &") },
     { 0,           MODKEY,                       XK_F3,     spawn,          SHCMD("killall -q screenkey") },
 
